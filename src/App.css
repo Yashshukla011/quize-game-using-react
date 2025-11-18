@@ -336,13 +336,13 @@
 .easy{
 
 }
-.input-group{
+.t{
     align-items: center;
     text-align: center;
       
 }
 
-.difficulty-level-selector {
+.t {
     display: flex;
     justify-content: center;
     gap: 0.75rem;
@@ -351,29 +351,24 @@
 
 
 
-#moveButton {
-   
-    position: absolute; 
-    
-    
-    transition: all 0.5s ease; 
-
-  
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
+button{
+  transition: 0.2s ease; 
+  height: 40px;
+  width: auto;
+  margin: 10px;
+  border-radius: 10px;
+   font-size: larger;
 }
 
-#moveButton:hover {
-    background-color: #45a049;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+.active-btn {
+  background-color: #4ca3af;
+  color: white;
+  border: 2px solid black;
+  transform: scale(1.15);  
+  border-radius: 10px;
 
-#moveButton:active {
-    background-color: #3e8e41;
+
+}
+.start-button{
+    width: 490px;
 }

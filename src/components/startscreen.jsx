@@ -6,6 +6,12 @@ const StartScreen = ({ onStartGame }) => {
   const [player1Name, setPlayer1Name] = useState('');
   const [player2Name, setPlayer2Name] = useState('');
   const [difficulty, setDifficulty] = useState('Medium'); 
+  const [active, setActive] = useState(null);
+const handleClick = (id, level) => {
+  setActive(id);
+  setDifficulty(level);
+};
+
 
   const handleStart = () => {
     const p1 = player1Name.trim();
@@ -42,13 +48,30 @@ const StartScreen = ({ onStartGame }) => {
           className="input-field input-field-p2"
         />
       </div>
+<div>
+  <button  id='t'
+    onClick={() => handleClick(1, "Easy")}
+    className={active === 1 ? "active-btn" : ""}
+  >
+    Easy
+  </button>
 
-     <div class="difficulty-level-selector">
-    <button type="button" class="difficulty-btn difficulty-default">Easy</button>
-    <button type="button" class="difficulty-btn difficulty-selected">Medium</button>
-    <button type="button" class="difficulty-btn difficulty-default">Hard</button>
+  <button id='t'
+    onClick={() => handleClick(2, "Medium")}
+    className={active === 2 ? "active-btn" : ""}
+  >
+    Medium
+  </button>
+
+  <button id='t'
+    onClick={() => handleClick(3, "Hard")}
+    className={active === 3 ? "active-btn" : ""
+      
+    }
+  >
+    Hard
+  </button>
 </div>
-
       <button
         type="button"
         onClick={handleStart}
