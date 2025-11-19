@@ -1,17 +1,15 @@
-
-import React, { useState } from 'react';
-
+import React, { useState } from "react";
 
 const StartScreen = ({ onStartGame }) => {
-  const [player1Name, setPlayer1Name] = useState('');
-  const [player2Name, setPlayer2Name] = useState('');
-  const [difficulty, setDifficulty] = useState('Medium'); 
-  const [active, setActive] = useState(null);
-const handleClick = (id, level) => {
-  setActive(id);
-  setDifficulty(level);
-};
+  const [player1Name, setPlayer1Name] = useState("");
+  const [player2Name, setPlayer2Name] = useState("");
+  const [difficulty, setDifficulty] = useState("Medium");
+  const [active, setActive] = useState(2); 
 
+  const handleClick = (id, level) => {
+    setActive(id);
+    setDifficulty(level);
+  };
 
   const handleStart = () => {
     const p1 = player1Name.trim();
@@ -27,7 +25,7 @@ const handleClick = (id, level) => {
 
   return (
     <div className="start-screen-content">
-      <div className='input-group'>
+      <div className="input-group">
         <label className="input-label">Player 1 Name</label>
         <input
           type="text"
@@ -38,7 +36,7 @@ const handleClick = (id, level) => {
         />
       </div>
 
-      <div className='input-group'>
+      <div className="input-group">
         <label className="input-label">Player 2 Name</label>
         <input
           type="text"
@@ -48,35 +46,34 @@ const handleClick = (id, level) => {
           className="input-field input-field-p2"
         />
       </div>
-<div>
-  <button  id='t'
-    onClick={() => handleClick(1, "Easy")}
-    className={active === 1 ? "active-btn" : ""}
-  >
-    Easy
-  </button>
 
-  <button id='t'
-    onClick={() => handleClick(2, "Medium")}
-    className={active === 2 ? "active-btn" : ""}
-  >
-    Medium
-  </button>
+      <div className="difficulty-container">
+        <button
+          type="button"
+          onClick={() => handleClick(1, "Easy")}
+          className={`difficulty-btn ${active === 1 ? "active-btn" : ""}`}
+        >
+          Easy
+        </button>
 
-  <button id='t'
-    onClick={() => handleClick(3, "Hard")}
-    className={active === 3 ? "active-btn" : ""
-      
-    }
-  >
-    Hard
-  </button>
-</div>
-      <button
-        type="button"
-        onClick={handleStart}
-        className="start-button"
-      >
+        <button
+          type="button"
+          onClick={() => handleClick(2, "Medium")}
+          className={`difficulty-btn ${active === 2 ? "active-btn" : ""}`}
+        >
+          Medium
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleClick(3, "Hard")}
+          className={`difficulty-btn ${active === 3 ? "active-btn" : ""}`}
+        >
+          Hard
+        </button>
+      </div>
+
+      <button type="button" onClick={handleStart} className="start-button">
         Start Battle
       </button>
     </div>
