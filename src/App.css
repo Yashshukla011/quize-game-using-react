@@ -991,3 +991,157 @@ button {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+.advance-actions {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.adv-btn.ai {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 10px 25px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.adv-btn.ai:hover:not(.disabled-btn) {
+  background: #00ff88;
+  color: #030a05;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+}
+
+.disabled-btn {
+  opacity: 0.4;
+  border-color: #6a7c71 !important;
+  color: #6a7c71 !important;
+  cursor: not-allowed !important;
+}
+
+.ai-hint-msg {
+  background: rgba(255, 255, 255, 0.05);
+  color: #00ff88;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-top: 15px;
+  border-left: 4px solid #00ff88;
+  font-style: italic;
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* Shake Effect for Wrong Answer */
+.wrong-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Correct Glow Effect */
+.correct-glow {
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Option Colors after selection */
+.emerald-option.correct-opt {
+  background: #00ff88 !important;
+  color: #030a05 !important;
+  border-color: #ffffff !important;
+}
+
+.emerald-option.wrong-opt {
+  background: #ff4757 !important;
+  color: white !important;
+  border-color: #ff4757 !important;
+}
+
+/* AI Hint Button */
+.adv-btn.ai {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 8px 20px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.disabled-btn {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #666;
+  color: #666;
+}
+/* AI Hint Button */
+.advance-actions {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.adv-btn.ai {
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 8px 20px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.disabled-btn {
+  opacity: 0.3;
+  border-color: #666 !important;
+  color: #666 !important;
+}
+
+.ai-hint-msg {
+  background: rgba(255, 255, 255, 0.05);
+  color: #00ff88;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  border-left: 4px solid #00ff88;
+}
+
+/* Feedback Animations */
+.wrong-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
+
+.correct-glow {
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+  transition: 0.3s;
+}
+
+.correct-opt {
+  background: #00ff88 !important;
+  color: #030a05 !important;
+}
+
+.wrong-opt {
+  background: #ff4757 !important;
+  color: white !important;
+}
