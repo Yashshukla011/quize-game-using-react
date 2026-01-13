@@ -1,6 +1,8 @@
 export const fetchQuizData = async () => {
   try {
-    const res = await fetch("https://opentdb.com/api.php?amount=10&type=multiple");
+    const res = await fetch(
+      "https://opentdb.com/api.php?amount=50&category=21&difficulty=easy&type=multiple"
+    );
     const data = await res.json();
 
     if (!data || !data.results) return [];
@@ -11,11 +13,18 @@ export const fetchQuizData = async () => {
       return txt.value;
     };
 
-    return data.results.map((q) => ({
+   
+    const formatted = data.results.map((q) => ({
       question: decodeHtml(q.question),
-      options: [...q.incorrect_answers, q.correct_answer].map((opt) => decodeHtml(opt)).sort(() => Math.random() - 0.5),
+      options: [...q.incorrect_answers, q.correct_answer]
+        .map((opt) => decodeHtml(opt))
+        .sort(() => Math.random() - 0.5), 
       correctAnswer: decodeHtml(q.correct_answer),
     }));
+
+    const random15 = formatted.sort(() => Math.random() - 0.5).slice(0, 10);
+
+    return random15;
   } catch (err) {
     console.error("fetchQuizData error:", err);
     return [];

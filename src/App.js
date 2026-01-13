@@ -2,138 +2,93 @@ import React, { useState, useEffect, useCallback } from "react";
 import StartScreen from "./components/startscreen";
 import GameScreen from "./components/Game";
 import EndScreen from "./components/end";
-import { fetchQuizData } from "./components/quizData";
 import "./App.css";
-
-const GAME_STATE = {
-  START: "start",
-  PLAYING: "playing",
-  ENDED: "ended",
-};
+import { fetchQuizData } from "./components/quizData";
+import { db } from "./components/Firebase";
+import { doc, updateDoc, increment, onSnapshot } from "firebase/firestore";
 
 function App() {
   const [quizData, setQuizData] = useState([]);
-  const [gameState, setGameState] = useState(GAME_STATE.START);
+  const [view, setView] = useState("start");
+  const [gameId, setGameId] = useState(null);
+  const [isHost, setIsHost] = useState(false);
+  const [gameMode, setGameMode] = useState("local");
 
+  // Sync States
   const [player1Name, setPlayer1Name] = useState("");
   const [player2Name, setPlayer2Name] = useState("");
-  const [difficulty, setDifficulty] = useState("Medium");
-
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [yashScore, setYashScore] = useState(0);
   const [shukalScore, setShukalScore] = useState(0);
   const [isYashsTurn, setIsYashsTurn] = useState(true);
 
-  
   useEffect(() => {
-    fetchQuizData().then((data) => {
-      setQuizData(data);
-    });
-  }, []);
+    if (gameId && view === "playing") {
+      const unsub = onSnapshot(doc(db, "games", gameId), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setCurrentQuestionIndex(data.currentQuestionIndex || 0);
+          setIsYashsTurn(data.isYashsTurn ?? true);
+          setYashScore(data.player1Score || 0);
+          setShukalScore(data.player2Score || 0);
+          if (data.status === "ended") setView("ended");
+          if (!isHost) {
+            setPlayer1Name(data.player1Name);
+            setPlayer2Name(data.player2Name);
+          }
+        }
+      });
+      return () => unsub();
+    }
+  }, [gameId, view, isHost]);
 
-  const startGame = async (p1, p2, level) => {
+  const startGame = async (p1, p2, level, id, mode, hostStatus) => {
     setPlayer1Name(p1);
     setPlayer2Name(p2);
-    setDifficulty(level);
-
-    setYashScore(0);
-    setShukalScore(0);
-    setCurrentQuestionIndex(0);
-    setIsYashsTurn(true);
-
-  
+    setGameId(id);
+    setGameMode(mode);
+    setIsHost(hostStatus);
+    
     const data = await fetchQuizData();
     setQuizData(data);
-
-    setGameState(GAME_STATE.PLAYING);
+    setView("playing");
   };
 
-  const endQuiz = () => setGameState(GAME_STATE.ENDED);
-
-  const moveToNextQuestion = useCallback(() => {
-    if (currentQuestionIndex + 1 >= quizData.length) {
-      endQuiz();
-      return;
-    }
-
-    setIsYashsTurn((prev) => !prev);
-    setCurrentQuestionIndex((prev) => prev + 1);
-  }, [currentQuestionIndex, quizData.length]);
-
-  const handleAnswer = useCallback(
-    (isCorrect) => {
-      if (isCorrect) {
-        isYashsTurn
-          ? setYashScore((s) => s + 1)
-          : setShukalScore((s) => s + 1);
-      }
-
-      setTimeout(moveToNextQuestion, 1500);
-    },
-    [isYashsTurn, moveToNextQuestion]
-  );
-
-  const handleTimeout = useCallback(() => {
-    moveToNextQuestion();
-  }, [moveToNextQuestion]);
-
-  const gameProps = {
-    player1Name,
-    player2Name,
-    yashScore,
-    shukalScore,
-    quizData,
-    currentQuestionIndex,
-  };
-
-  let content;
-
-  switch (gameState) {
-    case GAME_STATE.START:
-      content = <StartScreen onStartGame={startGame} />;
-      break;
-
-    case GAME_STATE.PLAYING:
-      if (quizData.length === 0) {
-        content = <h2>Loading Questions...</h2>;
-        break;
-      }
-      content = (
-        <GameScreen
-          gameState={{ currentQuestionIndex, isYashsTurn, yashScore, shukalScore }}
-          handleAnswer={handleAnswer}
-          handleTimeout={handleTimeout}
-          player1Name={player1Name}
-          player2Name={player2Name}
-          questions={quizData}
-        />
-      );
-      break;
-
-    case GAME_STATE.ENDED:
-      content = <EndScreen {...gameProps} />;
-      break;
-
-    default:
-      content = <StartScreen onStartGame={startGame} />;
-      break;
-  }
+  const handleAnswer = useCallback(async (isCorrect) => {
+    if (!gameId) return;
+    const isGameOver = currentQuestionIndex + 1 >= quizData.length;
+    const gameRef = doc(db, "games", gameId);
+    
+    await updateDoc(gameRef, {
+      [isYashsTurn ? "player1Score" : "player2Score"]: increment(isCorrect ? 10 : 0),
+      isYashsTurn: !isYashsTurn,
+      currentQuestionIndex: isGameOver ? currentQuestionIndex : currentQuestionIndex + 1,
+      status: isGameOver ? "ended" : "playing"
+    });
+  }, [gameId, isYashsTurn, currentQuestionIndex, quizData]);
 
   return (
     <div className="body-bg">
-      <h3 className="header-title">ImaginXP Game Mania</h3>
-      <p className="header-subtitle">CollegeDekho Quiz Battle</p>
-
       <div className="main-container">
-        <div className="quiz-box">
-          <h1 className="quiz-title">Quiz Battle</h1>
-          <p className="quiz-description">Challenge your knowledge in a battle of wits!</p>
-
-          {content}
-        </div>
+        {view === "start" && <StartScreen onStartGame={startGame} />}
+        {view === "playing" && (
+          <GameScreen
+            gameState={{ currentQuestionIndex, isYashsTurn, yashScore, shukalScore }}
+            handleAnswer={handleAnswer}
+            handleTimeout={() => handleAnswer(false)}
+            player1Name={player1Name}
+            player2Name={player2Name}
+            questions={quizData}
+            isHost={isHost}
+            gameMode={gameMode}
+            roomId={gameId}
+          />
+        )}
+        {view === "ended" && (
+          <EndScreen player1Name={player1Name} player2Name={player2Name} yashScore={yashScore} shukalScore={shukalScore} />
+        )}
       </div>
     </div>
   );
 }
-
 export default App;

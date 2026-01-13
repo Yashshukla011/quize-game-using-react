@@ -1,132 +1,98 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const TOTAL_TIME = 15;
+const GameScreen = ({ gameState, handleAnswer, handleTimeout, player1Name, player2Name, questions, isHost, gameMode, roomId }) => {
+  const [time, setTime] = useState(15);
+  const [selected, setSelected] = useState(null);
+  const timerRef = useRef();
 
-const GameScreen = ({
-  gameState,
-  handleAnswer,
-  handleTimeout,
-  player1Name,
-  player2Name,
-  questions,
-}) => {
+  // Hooks (Rules of Hooks follow karte hue top par)
+  useEffect(() => {
+    if (gameState && questions && questions[gameState.currentQuestionIndex]) {
+      const isMyTurn = gameMode === "local" ? true : (isHost ? gameState.isYashsTurn : !gameState.isYashsTurn);
+      
+      setTime(15);
+      setSelected(null);
+      
+      if (timerRef.current) clearInterval(timerRef.current);
 
-  const [timeRemaining, setTimeRemaining] = useState(TOTAL_TIME);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const timerRef = useRef(null);
+      timerRef.current = setInterval(() => {
+        setTime(t => {
+          if (t <= 1) {
+            clearInterval(timerRef.current);
+            if (isMyTurn) handleTimeout();
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [gameState?.currentQuestionIndex, isHost, gameMode, handleTimeout, questions]);
+
+  if (!gameState || !questions || questions.length === 0) {
+    return <div className="emerald-loader">Connecting to Arena...</div>;
+  }
 
   const { currentQuestionIndex, isYashsTurn, yashScore, shukalScore } = gameState;
+  const currentQuestion = questions[currentQuestionIndex];
+  const isMyTurn = gameMode === "local" ? true : (isHost ? isYashsTurn : !isYashsTurn);
 
- 
-  const questionsAvailable = Array.isArray(questions) && questions.length > 0;
-  const currentQuestion = questionsAvailable ? questions[currentQuestionIndex] : null;
-  const currentPlayerName = isYashsTurn ? player1Name : player2Name;
-  const progressPercentage = (timeRemaining / TOTAL_TIME) * 100;
-
- 
-  useEffect(() => {
-
-    if (!currentQuestion) return;
-
-   
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-
-
-    setTimeRemaining(TOTAL_TIME);
-    setSelectedOption(null);
-
-    timerRef.current = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleTimeout();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-
-  }, [currentQuestionIndex, currentQuestion, handleTimeout]);
-
-
-  const onOptionClick = (option) => {
-    if (selectedOption) return; 
-
-    setSelectedOption(option);
-    const isCorrect = option === currentQuestion.correctAnswer;
-
-  
+  const onSelect = (opt) => {
+    if (selected || !isMyTurn) return;
+    setSelected(opt);
     if (timerRef.current) clearInterval(timerRef.current);
-
-    handleAnswer(isCorrect);
+    handleAnswer(opt === currentQuestion.correctAnswer);
   };
 
-  const getButtonClasses = (option) => {
-    let classes = "option-button";
-    if (!selectedOption) return classes;
-
-    if (option === currentQuestion.correctAnswer) classes += " correct-answer";
-    else if (option === selectedOption) classes += " wrong-answer";
-    else classes += " disabled-option";
-
-    return classes;
-  };
-
-  if (!questionsAvailable) {
-    return <h2 style={{ color: "white", textAlign: "center" }}>Loading questions...</h2>;
-  }
-
-  if (!currentQuestion) {
- 
-    return <h2 style={{ color: "white", textAlign: "center" }}>Loading question...</h2>;
-  }
-
- 
   return (
-    <div>
-      <h2 className="question-text">{currentQuestion.question}</h2>
+    <div className="game-container animate-fade">
+      {/* Header Info */}
+      <div className="game-header">
+        <span className="room-badge">ROOM: {roomId?.slice(0,6)}</span>
+        <div className="score-row">
+          <div className={`p-score ${isYashsTurn ? 'active-glow' : ''}`}>
+            <span className="p-name">{player1Name}</span>
+            <span className="p-points">{yashScore}</span>
+          </div>
+          <div className="score-vs">VS</div>
+          <div className={`p-score ${!isYashsTurn ? 'active-glow' : ''}`}>
+            <span className="p-name">{player2Name}</span>
+            <span className="p-points">{shukalScore}</span>
+          </div>
+        </div>
+      </div>
 
-      <div className="options-container">
-        {currentQuestion.options.map((option) => (
-          <button
-            key={option}
-            onClick={() => onOptionClick(option)}
-            disabled={!!selectedOption}
-            className={getButtonClasses(option)}
+      {/* Question Card */}
+      <div className="question-card">
+        <div className="timer-wrapper">
+          <svg className="timer-svg">
+            <circle r="35" cx="40" cy="40"></circle>
+            <circle r="35" cx="40" cy="40" style={{ strokeDashoffset: 220 - (220 * time) / 15 }}></circle>
+          </svg>
+          <span className="timer-text">{time}</span>
+        </div>
+        <h2 className="question-text">{currentQuestion?.question}</h2>
+      </div>
+
+      {/* Options Grid */}
+      <div className="options-grid">
+        {currentQuestion?.options.map((opt, index) => (
+          <button 
+            key={index} 
+            onClick={() => onSelect(opt)} 
+            disabled={!isMyTurn || !!selected}
+            className={`emerald-option ${selected === opt ? "selected" : ""} ${!isMyTurn ? "locked" : ""}`}
           >
-            {option}
+            <span className="opt-index">{String.fromCharCode(65 + index)}</span>
+            <span className="opt-text">{opt}</span>
           </button>
         ))}
       </div>
 
-      <div className="timer-section">
-        <div className="timer-info">
-          <span className="timer-display">{timeRemaining}s</span>
-          <span className="turn-indicator">{currentPlayerName}'s turn</span>
-        </div>
-
-        <div className="progress-bar-bg">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="score-container">
-        <div className="score-box-p1">
-          <span>{player1Name}</span> Score: <span>{yashScore}</span>
-        </div>
-        <div className="score-box-p2">
-          <span>{player2Name}</span> Score: <span>{shukalScore}</span>
+      {/* Turn Indicator Footer */}
+      <div className="turn-footer">
+        <div className={`status-pill ${isMyTurn ? "my-turn" : "waiting"}`}>
+          {isMyTurn ? "YOUR TURN - CHOOSE NOW" : `WAITING FOR ${isYashsTurn ? player1Name : player2Name}...`}
         </div>
       </div>
     </div>
