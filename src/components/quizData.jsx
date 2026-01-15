@@ -22,7 +22,7 @@ export const fetchQuizData = async () => {
       correctAnswer: decodeHtml(q.correct_answer),
     }));
 
-    const random15 = formatted.sort(() => Math.random() - 0.5).slice(0, 10);
+    const random15 = formatted.sort(() => Math.random() - 0.5).slice(0, 6);
 
     return random15;
   } catch (err) {
