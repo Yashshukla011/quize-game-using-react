@@ -7,7 +7,7 @@ const StartScreen = ({ onStart }) => {
 
   return (
     <div className="emerald-container animate-fade">
-   <div className="bg-watermark">IMAGINXP</div>
+   <div className="bg-watermark"></div>
       <div className="main-logo animate-glow"><div className="inner-icon">⚔️</div></div>
      
       <h1 className="welcome-text">Quiz Battle</h1>
