@@ -837,3 +837,59 @@ body {
   position: relative;
   z-index: 1; /* Content hamesha watermark ke upar rahega */
 }
+/* Container styling */
+.mode-toggle-box {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Base Button Styling */
+.mode-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  color: #6ee7b7; /* Light Emerald */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Hover Effect */
+.mode-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Active Button (Neon Glow) */
+.mode-btn.active {
+  background: #10b981; /* Emerald 500 */
+  color: #051c14; /* Dark Background color */
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 
+              0 0 40px rgba(16, 185, 129, 0.2);
+  transform: scale(1.05);
+}
+
+.mode-btn .icon {
+  font-size: 18px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .mode-btn {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+}
