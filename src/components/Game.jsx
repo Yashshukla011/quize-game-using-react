@@ -6,7 +6,7 @@ const GameScreen = ({ players, question, turn, onAnswer }) => {
   const [time, setTime] = useState(15);
   const [selected, setSelected] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [fullScreenGlow, setFullScreenGlow] = useState(""); // For Full Screen Effect
+  const [fullScreenGlow, setFullScreenGlow] = useState(""); 
   const timerRef = useRef();
   const bgMusic = useRef(null);
 
@@ -18,7 +18,7 @@ const GameScreen = ({ players, question, turn, onAnswer }) => {
   };
 
   useEffect(() => {
-    // Background Music Logic
+    
     bgMusic.current = new Audio("/bg-music.mp3");
     bgMusic.current.loop = true;
     bgMusic.current.volume = 0.2;
@@ -27,7 +27,7 @@ const GameScreen = ({ players, question, turn, onAnswer }) => {
     return () => bgMusic.current.pause();
   }, []);
 
-  // Music toggle handler
+
   const toggleMute = () => {
     setIsMuted(!isMuted);
     if (!isMuted) bgMusic.current.pause();
@@ -55,11 +55,11 @@ const GameScreen = ({ players, question, turn, onAnswer }) => {
     const isCorrect = opt === question.correctAnswer;
     
     if (isCorrect) {
-      setFullScreenGlow("flash-green"); // Full screen chamak activate
+      setFullScreenGlow("flash-green");
       speak("Excellent!");
       confetti({ particleCount: 200, spread: 90, origin: { y: 0.5 } });
     } else {
-      setFullScreenGlow("flash-red"); // Galat hone par red flash
+      setFullScreenGlow("flash-red"); 
       speak("Wrong Answer!");
     }
     
@@ -68,7 +68,7 @@ const GameScreen = ({ players, question, turn, onAnswer }) => {
 
   return (
     <div className={`full-page-wrapper ${fullScreenGlow}`}>
-      {/* Sound Button */}
+
       <button className="sound-toggle" onClick={toggleMute}>
         {isMuted ? "🔇" : "🔊"}
       </button>

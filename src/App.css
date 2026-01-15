@@ -1,7 +1,5 @@
 
-/* Remove button fix */
 
-/* Timer & Options */
 .timer-circle {
   width: 80px;
   height: 80px;
@@ -799,4 +797,43 @@ body {
 .question-card.glass {
   border: 1px solid rgba(16, 185, 129, 0.3) !important;
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+/* Permanent Background Wrapper */
+.app-bg-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #020b08; /* Deep Dark Background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: -2; /* Sabse peeche */
+  overflow: hidden;
+}
+
+/* Background Branding Text */
+.permanent-watermark {
+  font-size: clamp(80px, 15vw, 180px); /* Responsive size */
+  font-weight: 900;
+  color: rgba(6, 243, 164, 0.04); /* Bahut hi halka Emerald */
+  text-transform: uppercase;
+  letter-spacing: 15px;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: bg-float 10s ease-in-out infinite;
+}
+
+/* Halki movement ke liye animation */
+@keyframes bg-float {
+  0%, 100% { transform: scale(1) rotate(-10deg); }
+  50% { transform: scale(1.1) rotate(-8deg); }
+}
+
+/* Taaki content transparent background ke saath dikhe */
+.main-card, .game-container {
+  position: relative;
+  z-index: 1; /* Content hamesha watermark ke upar rahega */
 }

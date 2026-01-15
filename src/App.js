@@ -40,6 +40,9 @@ const App = () => {
 
   return (
     <div className="app-main">
+      <div className="app-bg-container">
+        <div className="permanent-watermark">IMAGINXP</div>
+      </div>
       {screen === "start" && <StartScreen onStart={handleStartGame} />}
       {screen === "game" && (
         <GameScreen 

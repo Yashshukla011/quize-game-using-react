@@ -1,7 +1,7 @@
 "use client"
 
 const EndScreen = ({ allPlayers = [] }) => {
-  // Scores ke hisaab se sort karna
+
   const sorted = [...allPlayers].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
