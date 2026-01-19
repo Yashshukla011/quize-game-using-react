@@ -15,13 +15,16 @@ export const db = getFirestore(app);
 
 export const fetchQuizData = async () => {
   try {
-    const res = await fetch("https://opentdb.com/api.php?amount=10&category=21&difficulty=easy&type=multiple");
+    const res = await fetch("https://opentdb.com/api.php?amount=50&category=9&difficulty=medium&type=multiple");
+    if (res.status === 429) throw new Error("429");
+
     const data = await res.json();
     const decodeHtml = (html) => {
       const txt = document.createElement("textarea");
       txt.innerHTML = html;
       return txt.value;
     };
+
     return data.results.map((q) => ({
       question: decodeHtml(q.question),
       options: [...q.incorrect_answers, q.correct_answer]
@@ -29,5 +32,11 @@ export const fetchQuizData = async () => {
         .sort(() => Math.random() - 0.5),
       correctAnswer: decodeHtml(q.correct_answer),
     }));
-  } catch (err) { return []; }
+  } catch (err) {
+
+    return [
+      { question: "Which F1 driver has 7 world titles?", options: ["Senna", "Alonso", "Schumacher", "Prost"], correctAnswer: "Schumacher" },
+      { question: "Which team does Max Verstappen drive for?", options: ["Ferrari", "Red Bull", "Mercedes", "McLaren"], correctAnswer: "Red Bull" }
+    ];
+  }
 };

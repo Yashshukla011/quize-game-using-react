@@ -14,61 +14,86 @@ const App = () => {
   const [turnInfo, setTurnInfo] = useState({ qIndex: 0, pTurn: 0 });
   const [roomId, setRoomId] = useState("");
   const [myRole, setMyRole] = useState(null); 
+
   const QUESTION_LIMIT = 5;
 
+  // Real-time listener for Online Mode
   useEffect(() => {
     let unsubscribe;
     if (mode === "online" && roomId && screen === "game") {
-      unsubscribe = onSnapshot(doc(db, "rooms", roomId), (docSnap) => {
+      const roomRef = doc(db, "rooms", roomId);
+      unsubscribe = onSnapshot(roomRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setPlayers([data.player1, data.player2]);
-          if (data.questions && questions.length === 0) setQuestions(data.questions);
-
-          const p1Idx = data.player1?.qIdx || 0;
-          const p2Idx = data.player2?.qIdx || 0;
           
-          // Turn logic: Agar p1 ne jawaab de diya (qIdx badh gaya), toh p2 ki turn
-          const currentTurn = p1Idx <= p2Idx ? 0 : 1;
-          const currentQIdx = Math.min(p1Idx, p2Idx);
+          // 1. Sync Questions (Sirf ek baar)
+          if (data.questions && questions.length === 0) {
+            setQuestions(data.questions);
+          }
 
+          // 2. Sync Players State
+          const p1 = data.player1;
+          const p2 = data.player2;
+          setPlayers([p1, p2]);
+
+          // 3. Logic: Turn aur Question Index nikalna
+          // Jiska index kam hai, uski turn hai
+          let currentTurn = 0;
+          if (p1.qIdx > p2.qIdx) {
+            currentTurn = 1;
+          } else if (p1.qIdx === p2.qIdx) {
+            currentTurn = 0; // Dono barabar hain toh P1 start karega
+          }
+
+          const currentQIdx = currentTurn === 0 ? p1.qIdx : p2.qIdx;
           setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
 
-          if (p1Idx >= QUESTION_LIMIT && p2Idx >= QUESTION_LIMIT) setScreen("end");
+          // 4. Game Over check (Jab dono limit tak pahunch jayein)
+          if (p1.qIdx >= QUESTION_LIMIT && p2.qIdx >= QUESTION_LIMIT) {
+            setScreen("end");
+          }
         }
       });
     }
     return () => unsubscribe && unsubscribe();
   }, [mode, roomId, screen, questions.length]);
 
-  const handleStartGame = async (p1, p2, rid, m) => {
+  const handleStartGame = async (p1Name, p2Name, rid, m) => {
     setMode(m);
     if (m === "local") {
       const data = await fetchQuizData();
       setQuestions(data);
-      setPlayers([{ name: p1, score: 0, qIdx: 0 }, { name: p2, score: 0, qIdx: 0 }]);
+      setPlayers([
+        { name: p1Name, score: 0, qIdx: 0 }, 
+        { name: p2Name, score: 0, qIdx: 0 }
+      ]);
+      setTurnInfo({ qIndex: 0, pTurn: 0 });
       setScreen("game");
     } else {
+      // ONLINE MODE
       setRoomId(rid);
       const roomRef = doc(db, "rooms", rid);
       const roomSnap = await getDoc(roomRef);
       
       if (!roomSnap.exists()) {
-        // HOST logic
+        // Player 1 (Room Creator)
         const data = await fetchQuizData();
-        setQuestions(data);
-        setMyRole(0); 
-        sessionStorage.setItem("myRole", "0"); // Store role
+        setMyRole(0);
+        sessionStorage.setItem("quiz_role", "0");
         await setDoc(roomRef, { 
           questions: data, 
-          player1: { name: p1, score: 0, qIdx: 0 }, 
+          player1: { name: p1Name, score: 0, qIdx: 0 }, 
           player2: { name: "Waiting...", score: 0, qIdx: 0 } 
         });
       } else {
-        // GUEST logic
-        setMyRole(1); 
-        sessionStorage.setItem("myRole", "1"); // Store role
-        await updateDoc(roomRef, { "player2.name": p1 });
+        // Player 2 (Joiner)
+        setMyRole(1);
+        sessionStorage.setItem("quiz_role", "1");
+        await updateDoc(roomRef, { 
+          "player2.name": p1Name, // Joiner ka naam yahan p1Name variable mein hi aata hai
+          "player2.score": 0,
+          "player2.qIdx": 0 
+        });
       }
       setScreen("game");
     }
@@ -76,21 +101,36 @@ const App = () => {
 
   const handleAnswer = async (isCorrect) => {
     if (mode === "local") {
-      const up = [...players];
-      if (isCorrect) up[turnInfo.pTurn].score += 10;
-      up[turnInfo.pTurn].qIdx += 1;
-      setPlayers(up);
-      setTurnInfo(prev => ({ ...prev, pTurn: prev.pTurn === 0 ? 1 : 0 }));
-      if (up[0].qIdx >= QUESTION_LIMIT && up[1].qIdx >= QUESTION_LIMIT) setScreen("end");
+      const currentRole = turnInfo.pTurn;
+      const nextTurn = currentRole === 0 ? 1 : 0;
+
+      setPlayers((prev) => {
+        const updated = [...prev];
+        if (isCorrect) updated[currentRole].score += 10;
+        updated[currentRole].qIdx += 1;
+
+        const p1Done = updated[0].qIdx >= QUESTION_LIMIT;
+        const p2Done = updated[1].qIdx >= QUESTION_LIMIT;
+
+        if (p1Done && p2Done) {
+          setScreen("end");
+        } else {
+          const targetTurn = updated[nextTurn].qIdx < QUESTION_LIMIT ? nextTurn : currentRole;
+          setTurnInfo({ pTurn: targetTurn, qIndex: updated[targetTurn].qIdx });
+        }
+        return updated;
+      });
     } else {
-      // Online role retrieval
-      const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("myRole"));
+      // ONLINE MODE UPDATE
+      const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"));
       if (role === null || isNaN(role)) return;
 
       const pKey = role === 0 ? "player1" : "player2";
+      const currentPlayer = players[role];
+
       await updateDoc(doc(db, "rooms", roomId), {
-        [`${pKey}.score`]: isCorrect ? (players[role].score || 0) + 10 : (players[role].score || 0),
-        [`${pKey}.qIdx`]: (players[role].qIdx || 0) + 1
+        [`${pKey}.score`]: isCorrect ? (currentPlayer.score + 10) : currentPlayer.score,
+        [`${pKey}.qIdx`]: currentPlayer.qIdx + 1
       });
     }
   };
@@ -98,18 +138,21 @@ const App = () => {
   return (
     <div className="app-main">
       {screen === "start" && <StartScreen onStart={handleStartGame} />}
-      {screen === "game" && questions.length > 0 && (
+      
+      {screen === "game" && questions.length > 0 && players.length >= 2 && (
         <GameScreen 
           players={players} 
           question={questions[turnInfo.qIndex]} 
           turn={turnInfo.pTurn} 
           onAnswer={handleAnswer} 
           mode={mode} 
-          myRole={myRole !== null ? myRole : parseInt(sessionStorage.getItem("myRole"))} 
+          myRole={myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"))} 
         />
       )}
+      
       {screen === "end" && <EndScreen allPlayers={players} />}
     </div>
   );
 };
+
 export default App;

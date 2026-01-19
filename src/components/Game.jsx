@@ -8,21 +8,24 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
   const [fullScreenGlow, setFullScreenGlow] = useState(""); 
   const timerRef = useRef();
 
-  // Turn check logic
+  // Role verification check
   const isMyTurn = mode === "local" ? true : turn === myRole;
 
-  // Hooks hamesha top level par hone chahiye (Early return se pehle)
   useEffect(() => {
+    // Jab bhi naya question ya turn aaye, reset karein
     setSelected(null);
     setTime(15);
     setFullScreenGlow("");
+    if (timerRef.current) clearInterval(timerRef.current);
 
+    // Timer sirf tab chalega jab player ki apni turn ho
     if (isMyTurn && question) {
       timerRef.current = setInterval(() => {
         setTime((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            onAnswer(false); 
+            // Time khatam hone par automatically false answer bhej dein taaki next turn aaye
+            handleTimeout(); 
             return 0;
           }
           return prev - 1;
@@ -30,96 +33,134 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
       }, 1000);
     }
 
-    return () => clearInterval(timerRef.current);
-  }, [question, turn, isMyTurn, onAnswer]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [question, turn, isMyTurn]);
 
-  // Early return ab Hooks ke BAAD hai (Rules of Hooks fix)
-  if (!players || players.length === 0 || !question) {
-    return <div className="loading-screen">Loading Battle...</div>;
-  }
+  const handleTimeout = () => {
+    if (selected) return; // Agar click ho chuka hai toh kuch na karein
+    setFullScreenGlow("flash-red");
+    setTimeout(() => onAnswer(false), 500); // Index update trigger karein
+  };
 
   const handleSelect = (opt) => {
-    if (selected || !isMyTurn) return;
+    // Safety check: Dusre ki turn pe click na ho
+    if (selected !== null || !isMyTurn) return;
 
-    clearInterval(timerRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
     setSelected(opt);
-    
-    const isCorrect = opt === question.correctAnswer;
-    
+
+    // Question structure ke mutabiq check karein (correctAnswer ya answer)
+    const correctAnswer = question.correctAnswer || question.answer;
+    const isCorrect = opt === correctAnswer;
+
     if (isCorrect) {
       setFullScreenGlow("flash-green");
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
     } else {
       setFullScreenGlow("flash-red");
     }
 
+    // Ek second ka wait taaki user result dekh sake, phir next question
     setTimeout(() => {
       onAnswer(isCorrect);
-    }, 1000);
+    }, 1200);
   };
+
+  if (!players || players.length < 2 || !question) {
+    return (
+      <div className="full-page-wrapper">
+        <div className="loader">Waiting for opponent to join...</div>
+      </div>
+    );
+  }
+
+  const p1 = players[0];
+  const p2 = players[1];
+  const currentCorrectAnswer = question.correctAnswer || question.answer;
 
   return (
     <div className={`full-page-wrapper ${fullScreenGlow}`}>
-      <div className="game-container animate-fade">
-        
+      <div className="game-container">
+        {/* Players Header */}
         <div className="battle-header">
           <div className={`p-badge ${turn === 0 ? "active-glow" : ""}`}>
-            {players[0]?.name}: {players[0]?.score || 0}
+            <div className="name-tag">{p1.name}</div>
+            <div className="score-tag">{p1.score}</div>
           </div>
           
           <div className="timer-box">
-            {mode === "local" || isMyTurn ? `${time}s` : "⏳"}
+             {/* Timer sirf active player ko dikhega ya countdown dikhayega */}
+            {isMyTurn ? `${time}s` : "⏳"}
           </div>
           
           <div className={`p-badge ${turn === 1 ? "active-glow" : ""}`}>
-            {players[1]?.name}: {players[1]?.score || 0}
+            <div className="name-tag">{p2.name}</div>
+            <div className="score-tag">{p2.score}</div>
           </div>
         </div>
 
+        {/* Question Area */}
         <div className="question-card glass">
-          <div className="indicator-area">
-            {mode === "online" && !isMyTurn ? (
-              <p className="turn-indicator waiting-pulse">WAITING FOR {players[turn]?.name?.toUpperCase()}...</p>
-            ) : (
-              <p className="turn-indicator">{players[turn]?.name?.toUpperCase()}'S TURN</p>
-            )}
-          </div>
+          <p className="turn-indicator">
+            {isMyTurn ? "YOUR TURN" : `WAITING FOR ${players[turn]?.name?.toUpperCase()}`}
+          </p>
           <h2>{question.question}</h2>
         </div>
 
-        <div className={`options-grid ${!isMyTurn ? "disabled-grid" : ""}`}>
-          {question.options.map((opt, i) => (
-            <button 
-              key={i} 
-              disabled={!isMyTurn}
-              onClick={() => handleSelect(opt)}
-              className={`emerald-option ${
-                selected === opt 
-                  ? (opt === question.correctAnswer ? "correct-glow" : "wrong-opt") 
-                  : ""
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
+        {/* Options Grid */}
+        <div className={`options-grid ${!isMyTurn || selected !== null ? "disabled-grid" : ""}`}>
+          {question.options.map((opt, i) => {
+            // Option highlighting logic
+            let statusClass = "";
+            if (selected === opt) {
+              statusClass = opt === currentCorrectAnswer ? "correct-glow" : "wrong-opt";
+            } else if (selected !== null && opt === currentCorrectAnswer) {
+              statusClass = "correct-glow"; // Wrong choose karne par correct dikhana
+            }
+
+            return (
+              <button 
+                key={i} 
+                disabled={!isMyTurn || selected !== null} 
+                onClick={() => handleSelect(opt)}
+                className={`emerald-option ${statusClass}`}
+              >
+                {opt}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <style jsx>{`
-        .full-page-wrapper { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: background 0.3s ease; width: 100%; }
-        .flash-green { background: rgba(16, 185, 129, 0.2); }
-        .flash-red { background: rgba(239, 68, 68, 0.2); }
-        .battle-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 600px; margin-bottom: 30px; }
-        .p-badge { padding: 10px 20px; background: #064e3b; border-radius: 12px; color: white; border: 2px solid transparent; transition: 0.4s; font-weight: bold; }
-        .active-glow { border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); background: #065f46; }
-        .timer-box { font-size: 22px; font-weight: 800; color: #10b981; background: #051c14; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #10b981; }
-        .question-card { background: rgba(255, 255, 255, 0.04); padding: 40px; border-radius: 25px; text-align: center; border: 1px solid rgba(16, 185, 129, 0.2); margin-bottom: 25px; width: 100%; max-width: 650px; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 650px; }
-        .emerald-option { padding: 20px; background: #064e3b; border: 1px solid #10b981; color: white; border-radius: 15px; cursor: pointer; transition: 0.2s; font-size: 18px; }
-        .correct-glow { background: #10b981 !important; color: #051c14 !important; }
-        .wrong-opt { background: #ef4444 !important; }
-        .disabled-grid { opacity: 0.6; pointer-events: none; }
-        .loading-screen { color: #10b981; font-size: 24px; font-weight: bold; }
+        .full-page-wrapper { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; background: #020617; color: white; transition: 0.4s; overflow: hidden; padding: 20px; }
+        .game-container { width: 100%; max-width: 700px; display: flex; flex-direction: column; align-items: center; }
+        .flash-green { background: #064e3b !important; }
+        .flash-red { background: #451a1a !important; }
+        .battle-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 30px; gap: 10px; }
+        .p-badge { padding: 10px 20px; background: #1e293b; border-radius: 12px; flex: 1; text-align: center; border: 2px solid transparent; transition: 0.3s; }
+        .active-glow { border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); background: #0f172a; }
+        .name-tag { font-size: 14px; opacity: 0.7; overflow: hidden; text-overflow: ellipsis; }
+        .score-tag { font-size: 22px; font-weight: 800; color: #10b981; }
+        .timer-box { font-size: 24px; font-weight: bold; border: 3px solid #10b981; min-width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #020617; }
+        .question-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; text-align: center; width: 100%; margin-bottom: 25px; border: 1px solid rgba(16, 185, 129, 0.1); backdrop-filter: blur(10px); }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .emerald-option { padding: 20px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 15px; cursor: pointer; transition: 0.2s; font-size: 18px; font-weight: 500; }
+        .emerald-option:hover:not(:disabled) { background: #334155; transform: translateY(-2px); }
+        .correct-glow { background: #10b981 !important; color: white !important; border-color: #059669 !important; }
+        .wrong-opt { background: #ef4444 !important; border-color: #dc2626 !important; }
+        .disabled-grid { opacity: 0.8; }
+        .turn-indicator { color: #10b981; font-size: 12px; letter-spacing: 2px; margin-bottom: 10px; font-weight: bold; }
+        @media (max-width: 500px) {
+          .options-grid { grid-template-columns: 1fr; }
+          .battle-header { scale: 0.9; }
+        }
       `}</style>
     </div>
   );

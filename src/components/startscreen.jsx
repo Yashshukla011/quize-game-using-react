@@ -9,7 +9,7 @@ const StartScreen = ({ onStart }) => {
   const [isHost, setIsHost] = useState(true);
 
   const generateRoomId = () => {
-    // 6 characters ka unique uppercase code
+
     const id = Math.random().toString(36).substring(2, 8).toUpperCase();
     setRoomId(id);
     setIsHost(true);
@@ -27,6 +27,7 @@ const StartScreen = ({ onStart }) => {
 
   return (
     <div className="emerald-container animate-fade">
+      <div className="bg-watermark">IMAGINXP</div>
       <div className="main-logo animate-glow"><div className="inner-icon">⚔️</div></div>
       <h1 className="welcome-text">Quiz Battle</h1>
 

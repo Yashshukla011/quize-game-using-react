@@ -893,3 +893,41 @@ body {
     font-size: 14px;
   }
 }
+/* Parent Container */
+.emerald-container {
+  position: relative; /* Ye zaroori hai watermark ko andar rakhne ke liye */
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1; /* Base layer */
+  overflow: hidden;
+}
+
+/* Background Watermark (IMAGINXP) */
+.bg-watermark {
+  position: absolute; /* Ise background layer banane ke liye */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 15vw;
+  font-weight: 900;
+  color: rgba(16, 185, 129, 0.05); /* Bahut halka color */
+  z-index: -1; /* Ye container ke base se piche chala jayega */
+  pointer-events: none; /* Takki click buttons par hi ho */
+  white-space: nowrap;
+  animation: pulseMove 8s infinite ease-in-out;
+}
+
+/* Baki sara content (Logo, Form, Buttons) */
+.main-logo, .welcome-text, .mode-toggle-box, .glass-form {
+  position: relative;
+  z-index: 10; /* Ye hamesha watermark ke upar dikhenge */
+}
+
+@keyframes pulseMove {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.2; }
+}
