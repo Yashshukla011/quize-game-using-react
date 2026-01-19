@@ -103,7 +103,7 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
             <div className="score-tag">{p2.score}</div>
           </div>
         </div>
-
+//yash hsub//
  
         <div className="question-card glass">
          
