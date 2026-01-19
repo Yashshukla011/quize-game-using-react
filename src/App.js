@@ -17,7 +17,7 @@ const App = () => {
 
   const QUESTION_LIMIT = 5;
 
-  // Real-time listener for Online Mode
+  
   useEffect(() => {
     let unsubscribe;
     if (mode === "online" && roomId && screen === "game") {
@@ -26,29 +26,29 @@ const App = () => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           
-          // 1. Sync Questions (Sirf ek baar)
+        
           if (data.questions && questions.length === 0) {
             setQuestions(data.questions);
           }
 
-          // 2. Sync Players State
-          const p1 = data.player1;
-          const p2 = data.player2;
-          setPlayers([p1, p2]);
+  
+         // App.js ke useEffect (onSnapshot) ke andar ise update karein:
+const p1 = data.player1;
+const p2 = data.player2;
+setPlayers([p1, p2]);
 
-          // 3. Logic: Turn aur Question Index nikalna
-          // Jiska index kam hai, uski turn hai
-          let currentTurn = 0;
-          if (p1.qIdx > p2.qIdx) {
-            currentTurn = 1;
-          } else if (p1.qIdx === p2.qIdx) {
-            currentTurn = 0; // Dono barabar hain toh P1 start karega
-          }
+// Sahi Turn Logic: Agar dono barabar hain toh P1 (0) ki turn
+let currentTurn = 0;
+if (p1.qIdx > p2.qIdx) {
+    currentTurn = 1;
+} else {
+    currentTurn = 0; 
+}
 
-          const currentQIdx = currentTurn === 0 ? p1.qIdx : p2.qIdx;
-          setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
+const currentQIdx = currentTurn === 0 ? p1.qIdx : p2.qIdx;
+setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
 
-          // 4. Game Over check (Jab dono limit tak pahunch jayein)
+       
           if (p1.qIdx >= QUESTION_LIMIT && p2.qIdx >= QUESTION_LIMIT) {
             setScreen("end");
           }
@@ -70,13 +70,13 @@ const App = () => {
       setTurnInfo({ qIndex: 0, pTurn: 0 });
       setScreen("game");
     } else {
-      // ONLINE MODE
+     
       setRoomId(rid);
       const roomRef = doc(db, "rooms", rid);
       const roomSnap = await getDoc(roomRef);
       
       if (!roomSnap.exists()) {
-        // Player 1 (Room Creator)
+      
         const data = await fetchQuizData();
         setMyRole(0);
         sessionStorage.setItem("quiz_role", "0");
@@ -86,11 +86,11 @@ const App = () => {
           player2: { name: "Waiting...", score: 0, qIdx: 0 } 
         });
       } else {
-        // Player 2 (Joiner)
+   
         setMyRole(1);
         sessionStorage.setItem("quiz_role", "1");
         await updateDoc(roomRef, { 
-          "player2.name": p1Name, // Joiner ka naam yahan p1Name variable mein hi aata hai
+          "player2.name": p1Name, 
           "player2.score": 0,
           "player2.qIdx": 0 
         });
@@ -121,7 +121,6 @@ const App = () => {
         return updated;
       });
     } else {
-      // ONLINE MODE UPDATE
       const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"));
       if (role === null || isNaN(role)) return;
 
@@ -137,6 +136,7 @@ const App = () => {
 
   return (
     <div className="app-main">
+      <div className="bg-watermark">IMAGINXP</div>
       {screen === "start" && <StartScreen onStart={handleStartGame} />}
       
       {screen === "game" && questions.length > 0 && players.length >= 2 && (

@@ -931,3 +931,119 @@ body {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
   50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.2; }
 }
+/* App.css ya global style mein ye update karein */
+
+.bg-watermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  
+  /* Yahan se rotation control hota hai */
+  /* -45deg se ye ek corner se dusre corner tak diagonal dikhega */
+  transform: translate(-50%, -50%) rotate(-45deg); 
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 15vw; /* Size thoda aur bada */
+  font-weight: 950; /* Extra Bold */
+  letter-spacing: -5px;
+  text-transform: uppercase;
+  
+  /* Transparent design with outline */
+  color: transparent;
+  -webkit-text-stroke: 1.5px white; /* Halki green outline */
+  
+  pointer-events: none; /* Buttons click karne mein rukawat nahi banega */
+  z-index: 0;
+  user-select: none;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+/* Background mein thoda depth dene ke liye (Optional) */
+.app-main {
+  background: #020617; /* Dark Navy/Black background */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+}
+.room-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  width: 100%;
+}
+
+.gen-btn {
+  flex: 1;
+  padding: 14px 20px;
+  margin: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(41, 196, 121, 0.05);
+  color: #94a3b8; /* Muted color jab select na ho */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  backdrop-filter: blur(5px);
+}
+
+/* Active State: Jab button select ho */
+.active-mode {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #8bf4d1;
+  color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  transform: translateY(-2px);
+}
+
+.gen-btn:hover:not(.active-mode) {
+  background: rgba(36, 120, 43, 0.1);
+  color: white;
+}
+
+/* Input Styling */
+.room-id-input {
+  width: 100%;
+  padding: 16px;
+  background: #0f172a;
+  border: 2px solid #1e293b;
+  border-radius: 12px;
+  color: white;
+  font-size: 18px;
+  text-align: center;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+}
+
+.pulse-border:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+  outline: none;
+}
+
+.readonly-style {
+  background: rgba(30, 41, 59, 0.5);
+  color: #10b981;
+  font-weight: bold;
+  border-style: dashed;
+}
+
+/* Share Box design */
+.share-box {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.highlight-id {
+  font-size: 28px;
+  font-weight: 900;
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  margin-top: 5px;
+}

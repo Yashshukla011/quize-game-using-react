@@ -8,23 +8,22 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
   const [fullScreenGlow, setFullScreenGlow] = useState(""); 
   const timerRef = useRef();
 
-  // Role verification check
+
   const isMyTurn = mode === "local" ? true : turn === myRole;
 
   useEffect(() => {
-    // Jab bhi naya question ya turn aaye, reset karein
     setSelected(null);
     setTime(15);
     setFullScreenGlow("");
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Timer sirf tab chalega jab player ki apni turn ho
+   
     if (isMyTurn && question) {
       timerRef.current = setInterval(() => {
         setTime((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-            // Time khatam hone par automatically false answer bhej dein taaki next turn aaye
+          
             handleTimeout(); 
             return 0;
           }
@@ -39,19 +38,19 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
   }, [question, turn, isMyTurn]);
 
   const handleTimeout = () => {
-    if (selected) return; // Agar click ho chuka hai toh kuch na karein
+    if (selected) return;
     setFullScreenGlow("flash-red");
-    setTimeout(() => onAnswer(false), 500); // Index update trigger karein
+    setTimeout(() => onAnswer(false), 500); 
   };
 
   const handleSelect = (opt) => {
-    // Safety check: Dusre ki turn pe click na ho
+
     if (selected !== null || !isMyTurn) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
     setSelected(opt);
 
-    // Question structure ke mutabiq check karein (correctAnswer ya answer)
+
     const correctAnswer = question.correctAnswer || question.answer;
     const isCorrect = opt === correctAnswer;
 
@@ -66,7 +65,7 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
       setFullScreenGlow("flash-red");
     }
 
-    // Ek second ka wait taaki user result dekh sake, phir next question
+
     setTimeout(() => {
       onAnswer(isCorrect);
     }, 1200);
@@ -87,7 +86,7 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
   return (
     <div className={`full-page-wrapper ${fullScreenGlow}`}>
       <div className="game-container">
-        {/* Players Header */}
+    
         <div className="battle-header">
           <div className={`p-badge ${turn === 0 ? "active-glow" : ""}`}>
             <div className="name-tag">{p1.name}</div>
@@ -95,7 +94,7 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
           </div>
           
           <div className="timer-box">
-             {/* Timer sirf active player ko dikhega ya countdown dikhayega */}
+             
             {isMyTurn ? `${time}s` : "⏳"}
           </div>
           
@@ -105,23 +104,24 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
           </div>
         </div>
 
-        {/* Question Area */}
+ 
         <div className="question-card glass">
-          <p className="turn-indicator">
-            {isMyTurn ? "YOUR TURN" : `WAITING FOR ${players[turn]?.name?.toUpperCase()}`}
-          </p>
+         
+<p className="turn-indicator">
+  {isMyTurn ? "YOUR TURN" : `WAITING FOR ${players[turn]?.name === "Waiting..." ? "OPPONENT" : players[turn]?.name?.toUpperCase()}`}
+</p>
           <h2>{question.question}</h2>
         </div>
 
-        {/* Options Grid */}
+      
         <div className={`options-grid ${!isMyTurn || selected !== null ? "disabled-grid" : ""}`}>
           {question.options.map((opt, i) => {
-            // Option highlighting logic
+     
             let statusClass = "";
             if (selected === opt) {
               statusClass = opt === currentCorrectAnswer ? "correct-glow" : "wrong-opt";
             } else if (selected !== null && opt === currentCorrectAnswer) {
-              statusClass = "correct-glow"; // Wrong choose karne par correct dikhana
+              statusClass = "correct-glow"; 
             }
 
             return (
