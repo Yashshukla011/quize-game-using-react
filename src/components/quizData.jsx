@@ -13,30 +13,40 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
+const decodeHtml = (html) => {
+  if (typeof document === "undefined") return html;
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+};
+
+const getBackupQuestions = () => [
+  { question: "Which F1 driver has 7 world titles?", options: ["Senna", "Alonso", "Schumacher", "Prost"], correctAnswer: "Schumacher" },
+  { question: "Which team does Max Verstappen drive for?", options: ["Ferrari", "Red Bull", "Mercedes", "McLaren"], correctAnswer: "Red Bull" },
+  { question: "What is the capital of France?", options: ["Paris", "Berlin", "London", "Madrid"], correctAnswer: "Paris" },
+  { question: "Which planet is known as the Red Planet?", options: ["Mars", "Venus", "Jupiter", "Saturn"], correctAnswer: "Mars" },
+  { question: "Who won the FIFA World Cup in 2022?", options: ["France", "Argentina", "Brazil", "Germany"], correctAnswer: "Argentina" }
+];
+
 export const fetchQuizData = async () => {
   try {
-    const res = await fetch("https://opentdb.com/api.php?amount=50&category=9&difficulty=medium&type=multiple");
-    if (res.status === 429) throw new Error("429");
+    // Amount 10 taaki block na ho
+    const res = await fetch("https://opentdb.com/api.php?amount=10&category=9&type=multiple");
+    
+    if (res.status === 429) return getBackupQuestions();
 
     const data = await res.json();
-    const decodeHtml = (html) => {
-      const txt = document.createElement("textarea");
-      txt.innerHTML = html;
-      return txt.value;
-    };
-
-    return data.results.map((q) => ({
-      question: decodeHtml(q.question),
-      options: [...q.incorrect_answers, q.correct_answer]
-        .map((opt) => decodeHtml(opt))
-        .sort(() => Math.random() - 0.5),
-      correctAnswer: decodeHtml(q.correct_answer),
-    }));
+    if (data.results && data.results.length > 0) {
+      return data.results.map((q) => ({
+        question: decodeHtml(q.question),
+        options: [...q.incorrect_answers, q.correct_answer]
+          .map((opt) => decodeHtml(opt))
+          .sort(() => Math.random() - 0.5),
+        correctAnswer: decodeHtml(q.correct_answer),
+      }));
+    }
+    return getBackupQuestions();
   } catch (err) {
-
-    return [
-      { question: "Which F1 driver has 7 world titles?", options: ["Senna", "Alonso", "Schumacher", "Prost"], correctAnswer: "Schumacher" },
-      { question: "Which team does Max Verstappen drive for?", options: ["Ferrari", "Red Bull", "Mercedes", "McLaren"], correctAnswer: "Red Bull" }
-    ];
+    return getBackupQuestions();
   }
 };

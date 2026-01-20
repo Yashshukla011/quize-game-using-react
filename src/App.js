@@ -17,46 +17,22 @@ const App = () => {
 
   const QUESTION_LIMIT = 5;
 
-  
   useEffect(() => {
-    let unsubscribe;
-    if (mode === "online" && roomId && screen === "game") {
-      const roomRef = doc(db, "rooms", roomId);
-      unsubscribe = onSnapshot(roomRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          
-        
-          if (data.questions && questions.length === 0) {
-            setQuestions(data.questions);
-          }
-
-  
-         // App.js ke useEffect (onSnapshot) ke andar ise update karein:
-const p1 = data.player1;
-const p2 = data.player2;
-setPlayers([p1, p2]);
-
-// Sahi Turn Logic: Agar dono barabar hain toh P1 (0) ki turn
-let currentTurn = 0;
-if (p1.qIdx > p2.qIdx) {
-    currentTurn = 1;
-} else {
-    currentTurn = 0; 
-}
-
-const currentQIdx = currentTurn === 0 ? p1.qIdx : p2.qIdx;
-setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
-
-       
-          if (p1.qIdx >= QUESTION_LIMIT && p2.qIdx >= QUESTION_LIMIT) {
-            setScreen("end");
+    if (mode === "online" && roomId) {
+      const unsub = onSnapshot(doc(db, "rooms", roomId), (snap) => {
+        const data = snap.data();
+        if (data && data.player1 && data.player2) {
+          setPlayers([data.player1, data.player2]);
+          setQuestions(data.questions || []);
+          if (data.turnInfo) setTurnInfo(data.turnInfo);
+          if (data.player2.name !== "Waiting...") {
+            setScreen("game");
           }
         }
       });
+      return () => unsub();
     }
-    return () => unsubscribe && unsubscribe();
-  }, [mode, roomId, screen, questions.length]);
+  }, [roomId, mode]);
 
   const handleStartGame = async (p1Name, p2Name, rid, m) => {
     setMode(m);
@@ -67,35 +43,32 @@ setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
         { name: p1Name, score: 0, qIdx: 0 }, 
         { name: p2Name, score: 0, qIdx: 0 }
       ]);
-      setTurnInfo({ qIndex: 0, pTurn: 0 });
+      setTurnInfo({ qIndex: 0, pTurn: 0 }); 
       setScreen("game");
     } else {
-     
       setRoomId(rid);
       const roomRef = doc(db, "rooms", rid);
       const roomSnap = await getDoc(roomRef);
       
       if (!roomSnap.exists()) {
-      
         const data = await fetchQuizData();
         setMyRole(0);
         sessionStorage.setItem("quiz_role", "0");
         await setDoc(roomRef, { 
           questions: data, 
           player1: { name: p1Name, score: 0, qIdx: 0 }, 
-          player2: { name: "Waiting...", score: 0, qIdx: 0 } 
+          player2: { name: "Waiting...", score: 0, qIdx: 0 },
+          turnInfo: { qIndex: 0, pTurn: 0 } 
         });
       } else {
-   
         setMyRole(1);
         sessionStorage.setItem("quiz_role", "1");
         await updateDoc(roomRef, { 
-          "player2.name": p1Name, 
+          "player2.name": p1Name,
           "player2.score": 0,
           "player2.qIdx": 0 
         });
       }
-      setScreen("game");
     }
   };
 
@@ -103,15 +76,12 @@ setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
     if (mode === "local") {
       const currentRole = turnInfo.pTurn;
       const nextTurn = currentRole === 0 ? 1 : 0;
-
       setPlayers((prev) => {
         const updated = [...prev];
         if (isCorrect) updated[currentRole].score += 10;
         updated[currentRole].qIdx += 1;
-
         const p1Done = updated[0].qIdx >= QUESTION_LIMIT;
         const p2Done = updated[1].qIdx >= QUESTION_LIMIT;
-
         if (p1Done && p2Done) {
           setScreen("end");
         } else {
@@ -122,15 +92,20 @@ setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
       });
     } else {
       const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"));
-      if (role === null || isNaN(role)) return;
-
+      if (role === null || isNaN(role) || !roomId) return;
       const pKey = role === 0 ? "player1" : "player2";
       const currentPlayer = players[role];
+      const nextQIdx = currentPlayer.qIdx + 1;
+      const roomRef = doc(db, "rooms", roomId);
 
-      await updateDoc(doc(db, "rooms", roomId), {
+      await updateDoc(roomRef, {
         [`${pKey}.score`]: isCorrect ? (currentPlayer.score + 10) : currentPlayer.score,
-        [`${pKey}.qIdx`]: currentPlayer.qIdx + 1
+        [`${pKey}.qIdx`]: nextQIdx,
+        "turnInfo.qIndex": nextQIdx, 
+        "turnInfo.pTurn": role === 0 ? 1 : 0 
       });
+
+      if (nextQIdx >= questions.length) { setScreen("end"); }
     }
   };
 
@@ -138,7 +113,6 @@ setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
     <div className="app-main">
       <div className="bg-watermark">IMAGINXP</div>
       {screen === "start" && <StartScreen onStart={handleStartGame} />}
-      
       {screen === "game" && questions.length > 0 && players.length >= 2 && (
         <GameScreen 
           players={players} 
@@ -149,10 +123,10 @@ setTurnInfo({ qIndex: currentQIdx, pTurn: currentTurn });
           myRole={myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"))} 
         />
       )}
-      
       {screen === "end" && <EndScreen allPlayers={players} />}
     </div>
   );
 };
 
+// YEH LINE SABSE ZAROORI HAI
 export default App;
