@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 
 const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
@@ -8,22 +8,27 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
   const [fullScreenGlow, setFullScreenGlow] = useState(""); 
   const timerRef = useRef();
 
+  const isMyTurn = mode === "local" ? true : Number(turn) === Number(myRole);
 
-  const isMyTurn = mode === "local" ? true : turn === myRole;
+  // handleTimeout ko useCallback mein dala taaki dependency error solve ho jaye
+  const handleTimeout = useCallback(() => {
+    if (selected !== null) return;
+    setFullScreenGlow("flash-red");
+    setTimeout(() => onAnswer(false), 500); 
+  }, [selected, onAnswer]);
 
   useEffect(() => {
     setSelected(null);
     setTime(15);
     setFullScreenGlow("");
+    
     if (timerRef.current) clearInterval(timerRef.current);
 
-   
     if (isMyTurn && question) {
       timerRef.current = setInterval(() => {
         setTime((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
-          
             handleTimeout(); 
             return 0;
           }
@@ -35,21 +40,13 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [question, turn, isMyTurn]);
-
-  const handleTimeout = () => {
-    if (selected) return;
-    setFullScreenGlow("flash-red");
-    setTimeout(() => onAnswer(false), 500); 
-  };
+  }, [question, turn, isMyTurn, handleTimeout]); // handleTimeout yahan dependency mein hai
 
   const handleSelect = (opt) => {
-
     if (selected !== null || !isMyTurn) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
     setSelected(opt);
-
 
     const correctAnswer = question.correctAnswer || question.answer;
     const isCorrect = opt === correctAnswer;
@@ -65,12 +62,12 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
       setFullScreenGlow("flash-red");
     }
 
-
     setTimeout(() => {
       onAnswer(isCorrect);
     }, 1200);
   };
 
+  // Safe check for players array
   if (!players || players.length < 2 || !question) {
     return (
       <div className="full-page-wrapper">
@@ -88,41 +85,34 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
       <div className="game-container">
     
         <div className="battle-header">
-          <div className={`p-badge ${turn === 0 ? "active-glow" : ""}`}>
-            <div className="name-tag">{p1.name}</div>
-            <div className="score-tag">{p1.score}</div>
+          <div className={`p-badge ${Number(turn) === 0 ? "active-glow" : ""}`}>
+            <div className="name-tag">{p1?.name || "Player 1"}</div>
+            <div className="score-tag">{p1?.score || 0}</div>
           </div>
           
           <div className="timer-box">
-             
             {isMyTurn ? `${time}s` : "⏳"}
           </div>
           
-        {/* P2 (Opponent) Badge */}
-<div className={`p-badge ${turn === 1 ? "active-glow" : ""}`}>
-  <div className="name-tag">{p2?.name || "Joining..."}</div>
-  <div className="score-tag">{p2?.score || 0}</div>
-</div>
+          <div className={`p-badge ${Number(turn) === 1 ? "active-glow" : ""}`}>
+            <div className="name-tag">{p2?.name || "Opponent"}</div>
+            <div className="score-tag">{p2?.score || 0}</div>
+          </div>
         </div>
 
- 
         <div className="question-card glass">
-         
-<p className="turn-indicator">
-  {isMyTurn ? (
-    "YOUR TURN"
-  ) : (
-    // Agar turn 0 hai toh player 1 ka naam, agar 1 hai toh player 2 ka naam
-    `WAITING FOR ${players[turn]?.name?.toUpperCase() || "OPPONENT"}`
-  )}
-</p>
+          <p className="turn-indicator">
+            {isMyTurn ? (
+              "YOUR TURN"
+            ) : (
+              `WAITING FOR ${players[turn]?.name?.toUpperCase() || "OPPONENT"}`
+            )}
+          </p>
           <h2>{question.question}</h2>
         </div>
 
-      
         <div className={`options-grid ${!isMyTurn || selected !== null ? "disabled-grid" : ""}`}>
           {question.options.map((opt, i) => {
-     
             let statusClass = "";
             if (selected === opt) {
               statusClass = opt === currentCorrectAnswer ? "correct-glow" : "wrong-opt";
