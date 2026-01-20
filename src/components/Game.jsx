@@ -98,17 +98,23 @@ const GameScreen = ({ players, question, turn, onAnswer, mode, myRole }) => {
             {isMyTurn ? `${time}s` : "⏳"}
           </div>
           
-          <div className={`p-badge ${turn === 1 ? "active-glow" : ""}`}>
-            <div className="name-tag">{p2.name}</div>
-            <div className="score-tag">{p2.score}</div>
-          </div>
+        {/* P2 (Opponent) Badge */}
+<div className={`p-badge ${turn === 1 ? "active-glow" : ""}`}>
+  <div className="name-tag">{p2?.name || "Joining..."}</div>
+  <div className="score-tag">{p2?.score || 0}</div>
+</div>
         </div>
-//yash hsub//
+
  
         <div className="question-card glass">
          
 <p className="turn-indicator">
-  {isMyTurn ? "YOUR TURN" : `WAITING FOR ${players[turn]?.name === "Waiting..." ? "OPPONENT" : players[turn]?.name?.toUpperCase()}`}
+  {isMyTurn ? (
+    "YOUR TURN"
+  ) : (
+    // Agar turn 0 hai toh player 1 ka naam, agar 1 hai toh player 2 ka naam
+    `WAITING FOR ${players[turn]?.name?.toUpperCase() || "OPPONENT"}`
+  )}
 </p>
           <h2>{question.question}</h2>
         </div>
