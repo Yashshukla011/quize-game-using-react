@@ -17,22 +17,26 @@ const App = () => {
 
   const QUESTION_LIMIT = 5;
 
-  useEffect(() => {
-    if (mode === "online" && roomId) {
-      const unsub = onSnapshot(doc(db, "rooms", roomId), (snap) => {
-        const data = snap.data();
-        if (data && data.player1 && data.player2) {
-          setPlayers([data.player1, data.player2]);
-          setQuestions(data.questions || []);
-          if (data.turnInfo) setTurnInfo(data.turnInfo);
-          if (data.player2.name !== "Waiting...") {
-            setScreen("game");
-          }
+useEffect(() => {
+  if (mode === "online" && roomId) {
+    const unsub = onSnapshot(doc(db, "rooms", roomId), (snap) => {
+      const data = snap.data();
+      if (data && data.player1 && data.player2) {
+        setPlayers([data.player1, data.player2]);
+        setQuestions(data.questions || []);
+        if (data.turnInfo) setTurnInfo(data.turnInfo);
+
+        // SYNC END SCREEN: Agar database mein status ended hai toh screen badlo
+        if (data.status === "ended") {
+          setScreen("end");
+        } else if (data.player2.name !== "Waiting...") {
+          setScreen("game");
         }
-      });
-      return () => unsub();
-    }
-  }, [roomId, mode]);
+      }
+    });
+    return () => unsub();
+  }
+}, [roomId, mode]);
 
   const handleStartGame = async (p1Name, p2Name, rid, m) => {
     setMode(m);
@@ -72,42 +76,54 @@ const App = () => {
     }
   };
 
-  const handleAnswer = async (isCorrect) => {
-    if (mode === "local") {
-      const currentRole = turnInfo.pTurn;
-      const nextTurn = currentRole === 0 ? 1 : 0;
-      setPlayers((prev) => {
-        const updated = [...prev];
-        if (isCorrect) updated[currentRole].score += 10;
-        updated[currentRole].qIdx += 1;
-        const p1Done = updated[0].qIdx >= QUESTION_LIMIT;
-        const p2Done = updated[1].qIdx >= QUESTION_LIMIT;
-        if (p1Done && p2Done) {
-          setScreen("end");
-        } else {
-          const targetTurn = updated[nextTurn].qIdx < QUESTION_LIMIT ? nextTurn : currentRole;
-          setTurnInfo({ pTurn: targetTurn, qIndex: updated[targetTurn].qIdx });
-        }
-        return updated;
-      });
-    } else {
-      const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"));
-      if (role === null || isNaN(role) || !roomId) return;
-      const pKey = role === 0 ? "player1" : "player2";
-      const currentPlayer = players[role];
-      const nextQIdx = currentPlayer.qIdx + 1;
-      const roomRef = doc(db, "rooms", roomId);
+const handleAnswer = async (isCorrect) => {
+  if (mode === "local") {
+    const currentRole = turnInfo.pTurn;
+    const nextTurn = currentRole === 0 ? 1 : 0;
 
-      await updateDoc(roomRef, {
-        [`${pKey}.score`]: isCorrect ? (currentPlayer.score + 10) : currentPlayer.score,
-        [`${pKey}.qIdx`]: nextQIdx,
-        "turnInfo.qIndex": nextQIdx, 
-        "turnInfo.pTurn": role === 0 ? 1 : 0 
-      });
+    setPlayers((prev) => {
+      const updated = [...prev];
+      if (isCorrect) updated[currentRole].score += 10;
+      updated[currentRole].qIdx += 1;
 
-      if (nextQIdx >= questions.length) { setScreen("end"); }
+      const p1Done = updated[0].qIdx >= QUESTION_LIMIT;
+      const p2Done = updated[1].qIdx >= QUESTION_LIMIT;
+
+      if (p1Done && p2Done) {
+        setScreen("end");
+      } else {
+        const targetTurn = updated[nextTurn].qIdx < QUESTION_LIMIT ? nextTurn : currentRole;
+        setTurnInfo({ pTurn: targetTurn, qIndex: updated[targetTurn].qIdx });
+      }
+      return updated;
+    });
+  } else {
+    // ONLINE MODE LOGIC
+    const role = myRole !== null ? myRole : parseInt(sessionStorage.getItem("quiz_role"));
+    if (role === null || isNaN(role) || !roomId) return;
+
+    const pKey = role === 0 ? "player1" : "player2";
+    const currentPlayer = players[role];
+    const nextQIdx = currentPlayer.qIdx + 1;
+    const roomRef = doc(db, "rooms", roomId);
+
+    // Pehle updates object banayein
+    const updates = {
+      [`${pKey}.score`]: isCorrect ? (currentPlayer.score + 10) : currentPlayer.score,
+      [`${pKey}.qIdx`]: nextQIdx,
+      "turnInfo.qIndex": nextQIdx, 
+      "turnInfo.pTurn": role === 0 ? 1 : 0 
+    };
+
+    // Global End Check: Jab current player limit tak pahunch jaye
+    // Hum status: "ended" bhejenge taaki onSnapshot dono ko end screen dikhaye
+    if (nextQIdx >= QUESTION_LIMIT) {
+      updates.status = "ended";
     }
-  };
+
+    await updateDoc(roomRef, updates);
+  }
+};
 
   return (
     <div className="app-main">
